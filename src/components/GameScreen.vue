@@ -4,6 +4,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const emit = defineEmits(['cambiar-pantalla'])
 
 const listaPreguntas = ref([])
+const indicePregunta = ref(0)
+
+const audioAcierto = ref(null)
+const audioError = ref(null)
+const audioGameOver = ref(null)
 
 const cargarPreguntas = async () => {
   try {
@@ -17,15 +22,48 @@ const cargarPreguntas = async () => {
 
 const anguloRotacion = ref(0)
 
+const revisarDerrota = () => {
+  if (anguloRotacion.value <= -60 || anguloRotacion.value >= 60) {
+    if (audioGameOver.value) {
+      audioGameOver.value.currentTime = 0
+      audioGameOver.value.play()
+    }
+    emit('cambiar-pantalla', 'result')
+  }
+}
+
 const manejarTeclado = (event) => {
   if (event.key === 'ArrowLeft') {
     anguloRotacion.value -= 5
   } else if (event.key === 'ArrowRight') {
     anguloRotacion.value += 5
   }
+  revisarDerrota()
+}
 
-  if (anguloRotacion.value <= -60 || anguloRotacion.value >= 60) {
-    emit('cambiar-pantalla', 'result')
+const verificarRespuesta = (opcionSeleccionada) => {
+  const preguntaActual = listaPreguntas.value[indicePregunta.value]
+  
+  if (opcionSeleccionada === preguntaActual.respuesta_correcta) {
+    if (audioAcierto.value) {
+      audioAcierto.value.currentTime = 0
+      audioAcierto.value.play()
+    }
+    anguloRotacion.value = 0 // Estabilizar
+    
+    if (indicePregunta.value < listaPreguntas.value.length - 1) {
+      indicePregunta.value++
+    } else {
+      emit('cambiar-pantalla', 'result') // Se acabaron las preguntas
+    }
+  } else {
+    if (audioError.value) {
+      audioError.value.currentTime = 0
+      audioError.value.play()
+    }
+    const desestabilizacion = Math.random() > 0.5 ? 35 : -35
+    anguloRotacion.value += desestabilizacion
+    revisarDerrota()
   }
 }
 
@@ -44,12 +82,13 @@ onUnmounted(() => {
     <h1>Pantalla de Juego</h1>
     
     <div v-if="listaPreguntas.length > 0" class="pregunta-container">
-      <h2>{{ listaPreguntas[0].pregunta }}</h2>
+      <h2>{{ listaPreguntas[indicePregunta].pregunta }}</h2>
       <div class="opciones">
         <button 
-          v-for="(opcion, index) in listaPreguntas[0].opciones" 
+          v-for="(opcion, index) in listaPreguntas[indicePregunta].opciones" 
           :key="index"
           class="btn-opcion"
+          @click="verificarRespuesta(opcion)"
         >
           {{ opcion }}
         </button>
@@ -64,6 +103,11 @@ onUnmounted(() => {
     </div>
 
     <button class="btn-terminar" @click="emit('cambiar-pantalla', 'result')">Terminar</button>
+
+    <!-- Audios ocultos -->
+    <audio ref="audioAcierto" src="/acierto.mp3"></audio>
+    <audio ref="audioError" src="/error.mp3"></audio>
+    <audio ref="audioGameOver" src="/game_over.mp3"></audio>
   </div>
 </template>
 
