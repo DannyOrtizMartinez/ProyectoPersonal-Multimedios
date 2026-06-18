@@ -166,7 +166,7 @@ const verificarRespuesta = (opcionSeleccionada) => {
     indicePregunta.value++
   }
 
-  if (anguloRotacion.value > 85 || anguloRotacion.value < -20) {
+  if (anguloRotacion.value > 175 || anguloRotacion.value < -20) {
     terminarJuego()
   }
 }
