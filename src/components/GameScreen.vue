@@ -113,48 +113,67 @@ onUnmounted(() => {
 
 <style scoped>
 .screen {
-  padding: 20px;
-  border: 1px solid #4caf50;
-  border-radius: 8px;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
+h1 { margin-top: 0; color: #2c3e50; }
 .pregunta-container {
-  margin: 20px 0;
-  padding: 15px;
-  background-color: #694848ff;
+  margin: 1rem 0;
+  padding: 1.5rem;
+  background-color: #694848;
   border-radius: 8px;
-  color: #f3efefff;
+  color: #f3efef;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+h2 {
+  font-size: 1.2rem;
+  margin-top: 0;
 }
 .opciones {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 12px;
+  margin-top: 1rem;
 }
 .btn-opcion {
-  padding: 10px;
-  font-size: 16px;
+  padding: 12px;
+  font-size: 1rem;
   cursor: pointer;
-  background-color: #e0e0e0;
-  border: none;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  color: #000000ff;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #000000;
+  text-align: left;
 }
 .btn-opcion:hover {
-  background-color: #d0d0d0;
+  background-color: #dee2e6;
+  transform: translateX(4px);
 }
 .btn-terminar {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
+  margin-top: 2rem;
+  padding: 12px 24px;
+  font-size: 1rem;
   cursor: pointer;
   background-color: #ff5252;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+.btn-terminar:hover {
+  background-color: #ff1744;
 }
 .moto-container {
-  margin: 40px auto;
+  margin: 2rem auto;
   font-size: 80px;
   width: 100px;
   height: 100px;
@@ -162,5 +181,11 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   transition: transform 0.1s linear;
+}
+@media (max-width: 480px) {
+  .screen { padding: 1.5rem; }
+  h2 { font-size: 1.1rem; }
+  .btn-opcion { font-size: 0.95rem; }
+  .moto-container { font-size: 60px; height: 80px; margin: 1rem auto; }
 }
 </style>
