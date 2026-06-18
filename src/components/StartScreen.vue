@@ -16,7 +16,7 @@ onMounted(() => {
 
 <template>
   <div class="screen">
-    <h1>Endless Moto Trivia</h1>
+    <h1>Wheelies Con conocimiento</h1>
     
     <div v-if="!mostrandoHistorial" class="menu-principal">
       <p>Demuestra tus habilidades de conducción y conocimiento.</p>
