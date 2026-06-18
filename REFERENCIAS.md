@@ -10,7 +10,7 @@ Durante el desarrollo de este minijuego, utilicé herramientas de IA generativa 
 ## Recursos Multimedia
 A continuación, se listan los recursos multimedia utilizados en el juego junto con sus respectivas licencias:
 
-* **Audio de Acierto**: [Insertar enlace aquí] - Licencia: [Insertar tipo de licencia]
-* **Audio de Error**: [Insertar enlace aquí] - Licencia: [Insertar tipo de licencia]
-* **Audio de Game Over**: [Insertar enlace aquí] - Licencia: [Insertar tipo de licencia]
-* **Imagen/Emoji de Motocicleta**: [Insertar enlace aquí] - Licencia: [Insertar tipo de licencia]
+* **Audio de Acierto**: [https://freesound.org/people/grunz/sounds/109662/] - Licencia: [CC0 1.0 Universal (Dominio Público)]
+* **Audio de Error**: [https://pixabay.com/es/sound-effects/search/error/] - Licencia: [Licencia de Pixabay (Uso libre comercial, sin atribución)]
+* **Audio de Game Over**: [https://pixabay.com/es/sound-effects/search/sonido%20de%20fin%20de%20juego/] - Licencia: [Licencia de Pixabay (Uso libre comercial, sin atribución)]
+* **Imagen de Motocicleta**: Generada mediante inteligencia artificial (Google Gemini) - Licencia: Libre de derechos / Generado por IA.
