@@ -7,7 +7,8 @@ import datosPreguntas from '../preguntas.json'
 const emit = defineEmits(['cambiar-pantalla'])
 
 // Estados de la trivia (ahora carga los datos al instante)
-const listaPreguntas = ref(datosPreguntas)
+// Usamos .sort() con Math.random() para barajar el orden de las preguntas cada vez que se juega
+const listaPreguntas = ref([...datosPreguntas].sort(() => Math.random() - 0.5))
 const indicePregunta = ref(0)
 
 // Estados del jugador
