@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits(['cambiar-pantalla'])
 
@@ -15,8 +15,27 @@ const cargarPreguntas = async () => {
   }
 }
 
+const anguloRotacion = ref(0)
+
+const manejarTeclado = (event) => {
+  if (event.key === 'ArrowLeft') {
+    anguloRotacion.value -= 5
+  } else if (event.key === 'ArrowRight') {
+    anguloRotacion.value += 5
+  }
+
+  if (anguloRotacion.value <= -60 || anguloRotacion.value >= 60) {
+    emit('cambiar-pantalla', 'result')
+  }
+}
+
 onMounted(() => {
   cargarPreguntas()
+  window.addEventListener('keydown', manejarTeclado)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', manejarTeclado)
 })
 </script>
 
@@ -38,6 +57,10 @@ onMounted(() => {
     </div>
     <div v-else>
       <p>Cargando preguntas...</p>
+    </div>
+
+    <div class="moto-container" :style="{ transform: `rotate(${anguloRotacion}deg)` }">
+      🏍️
     </div>
 
     <button class="btn-terminar" @click="emit('cambiar-pantalla', 'result')">Terminar</button>
@@ -85,5 +108,15 @@ onMounted(() => {
   color: white;
   border: none;
   border-radius: 4px;
+}
+.moto-container {
+  margin: 40px auto;
+  font-size: 80px;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s linear;
 }
 </style>
