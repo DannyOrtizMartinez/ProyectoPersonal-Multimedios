@@ -1,10 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
+// Importamos el JSON directamente desde la carpeta src
+import datosPreguntas from '../preguntas.json'
+
 const emit = defineEmits(['cambiar-pantalla'])
 
-// Estados de la trivia
-const listaPreguntas = ref([])
+// Estados de la trivia (ahora carga los datos al instante)
+const listaPreguntas = ref(datosPreguntas)
 const indicePregunta = ref(0)
 
 // Estados del jugador
@@ -27,17 +30,6 @@ let isBraking = false
 let gameLoopId = null
 let lastTime = 0
 let tiempoAcumuladoPregunta = 0
-
-// Cargar preguntas desde el JSON
-const cargarPreguntas = async () => {
-  try {
-    const respuesta = await fetch('/preguntas.json')
-    const datos = await respuesta.json()
-    listaPreguntas.value = datos
-  } catch (error) {
-    console.error('Error al cargar las preguntas:', error)
-  }
-}
 
 // Controles de teclado
 const manejarTeclaDown = (event) => {
@@ -182,7 +174,6 @@ const terminarJuego = () => {
 }
 
 onMounted(() => {
-  cargarPreguntas()
   window.addEventListener('keydown', manejarTeclaDown)
   window.addEventListener('keyup', manejarTeclaUp)
   
@@ -291,7 +282,7 @@ onUnmounted(() => {
 .screen.endless-runner {
   position: relative;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh; /* Ajuste para que no se corte en celulares */
   background: #fff;
   overflow: hidden;
   display: flex;
@@ -533,13 +524,24 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .mobile-controls {
     display: flex;
+    bottom: 20px; /* Pegados un poco más abajo */
+    padding: 0 15px; /* Menos espacio en los bordes laterales */
   }
+  
+  .ctrl-btn {
+    width: 60px; /* Botones más pequeños para celular */
+    height: 60px;
+    font-size: 1.5rem;
+    background: rgba(0, 0, 0, 0.6); /* Un poco más oscuros para resaltar sobre la carretera */
+  }
+
   .moto-wrapper {
-    bottom: 150px; /* Elevar para que los botones no la tapen */
+    bottom: 140px; /* Elevamos la moto para que los controles no la tapen */
   }
+  
   .stat-box {
-    font-size: 1rem;
-    padding: 8px 12px;
+    font-size: 0.9rem; /* Textos superiores más pequeños */
+    padding: 6px 10px;
   }
 }
 </style>
