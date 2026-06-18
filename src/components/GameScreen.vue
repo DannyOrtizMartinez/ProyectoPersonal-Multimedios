@@ -135,7 +135,17 @@ const mostrarPregunta = () => {
 const verificarRespuesta = (opcionSeleccionada) => {
   const preguntaActual = listaPreguntas.value[indicePregunta.value]
   
-  if (opcionSeleccionada === preguntaActual.respuesta_correcta) {
+  // Seguridad por si la pregunta no existe
+  if (!preguntaActual) return
+
+  // Convertimos a texto y eliminamos espacios invisibles a los lados
+  const respuestaJugador = String(opcionSeleccionada).trim()
+  const respuestaCorrecta = String(preguntaActual.respuesta_correcta).trim()
+
+  // Consola para que verifiques en tiempo real qué está comparando el sistema
+  console.log(`Comparando: '${respuestaJugador}' con '${respuestaCorrecta}'`)
+  
+  if (respuestaJugador === respuestaCorrecta) {
     if (audioAcierto.value) {
       audioAcierto.value.currentTime = 0
       audioAcierto.value.play()
