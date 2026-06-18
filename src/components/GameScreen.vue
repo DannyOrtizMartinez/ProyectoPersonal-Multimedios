@@ -524,24 +524,37 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .mobile-controls {
     display: flex;
-    bottom: 20px; /* Pegados un poco más abajo */
-    padding: 0 15px; /* Menos espacio en los bordes laterales */
+    bottom: 50px; /* Más arriba para no chocar con la barra del celular */
+    padding: 0 25px; /* Un poco más separados de los bordes laterales */
   }
   
   .ctrl-btn {
-    width: 60px; /* Botones más pequeños para celular */
-    height: 60px;
-    font-size: 1.5rem;
-    background: rgba(0, 0, 0, 0.6); /* Un poco más oscuros para resaltar sobre la carretera */
+    width: 75px; /* Tamaño ideal para los pulgares */
+    height: 75px;
+    font-size: 2.5rem; /* Flechas más grandes */
+    background: rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5); /* Sombra para resaltar */
+    backdrop-filter: blur(4px); /* Efecto cristal moderno */
+    transition: transform 0.1s; /* Animación suave al soltar */
+  }
+
+  .ctrl-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.90); /* Efecto visual de que se está presionando el botón */
+  }
+
+  .road-container {
+    height: 180px; /* Carretera más alta para que sea el fondo de los botones */
   }
 
   .moto-wrapper {
-    bottom: 140px; /* Elevamos la moto para que los controles no la tapen */
+    bottom: 150px; /* Elevamos la moto para que ruede limpia sobre la carretera y no cruce los botones */
   }
   
   .stat-box {
-    font-size: 0.9rem; /* Textos superiores más pequeños */
-    padding: 6px 10px;
+    font-size: 0.95rem; 
+    padding: 8px 12px;
   }
 }
 </style>
