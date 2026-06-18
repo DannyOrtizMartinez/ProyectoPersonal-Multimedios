@@ -16,10 +16,11 @@ const audioAcierto = ref(null)
 const audioError = ref(null)
 const audioGameOver = ref(null)
 
-// Estados del juego (Endless Runner)
+// Estados del juego
 const anguloRotacion = ref(0)
 const juegoPausado = ref(false)
 const mostrandoPregunta = ref(false)
+const velocidadAnimacion = ref(0.8) // Velocidad base en segundos
 
 let isAccelerating = false
 let isBraking = false
@@ -40,7 +41,20 @@ const cargarPreguntas = async () => {
 
 // Controles de teclado
 const manejarTeclaDown = (event) => {
+  if (event.key === 'Escape') {
+    if (mostrandoPregunta.value) return // No pausar si hay modal
+    juegoPausado.value = !juegoPausado.value
+    if (!juegoPausado.value) {
+      lastTime = performance.now()
+      gameLoopId = requestAnimationFrame(gameLoop)
+    } else {
+      cancelAnimationFrame(gameLoopId)
+    }
+    return
+  }
+
   if (juegoPausado.value) return
+
   if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
     isAccelerating = true
   } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
@@ -56,24 +70,38 @@ const manejarTeclaUp = (event) => {
   }
 }
 
-// Bucle principal del juego (Game Loop)
+// Controles táctiles (Móviles)
+const startAccelerate = () => { if(!juegoPausado.value) isAccelerating = true }
+const stopAccelerate = () => { isAccelerating = false }
+const startBrake = () => { if(!juegoPausado.value) isBraking = true }
+const stopBrake = () => { isBraking = false }
+
+// Guardar historial
+const registrarAcierto = () => {
+  let aciertos = parseInt(localStorage.getItem('respuestasCorrectas') || '0', 10)
+  aciertos++
+  localStorage.setItem('respuestasCorrectas', aciertos)
+}
+
+// Bucle principal del juego
 const gameLoop = (timestamp) => {
   if (!lastTime) lastTime = timestamp
   const deltaTime = timestamp - lastTime
   lastTime = timestamp
 
-  if (!juegoPausado.value) {
-    // 1. Aumentar distancia
-    distancia.value += 5 * (deltaTime / 16)
+  if (!juegoPausado.value && !mostrandoPregunta.value) {
+    // 1. Aumentar distancia (acelera si va en wheelie)
+    const factorVelocidad = velocidadAnimacion.value < 0.8 ? 1.5 : 1
+    distancia.value += 5 * factorVelocidad * (deltaTime / 16)
     tiempoAcumuladoPregunta += deltaTime
 
     // 2. Físicas y Gravedad
     if (isAccelerating) {
-      anguloRotacion.value += 1.5 * (deltaTime / 16) // Hace wheelie
+      anguloRotacion.value += 1.5 * (deltaTime / 16)
     } else if (isBraking) {
-      anguloRotacion.value -= 1.5 * (deltaTime / 16) // Se inclina hacia adelante
+      anguloRotacion.value -= 1.5 * (deltaTime / 16)
     } else {
-      // Gravedad: Volver a 0 lentamente si no presiona nada
+      // Gravedad: Volver a 0 lentamente
       if (anguloRotacion.value > 0) {
         anguloRotacion.value = Math.max(0, anguloRotacion.value - 1.0 * (deltaTime / 16))
       } else if (anguloRotacion.value < 0) {
@@ -81,64 +109,64 @@ const gameLoop = (timestamp) => {
       }
     }
 
-    // 3. Revisar condición de derrota (Game Over)
-    if (anguloRotacion.value > 60 || anguloRotacion.value < -20) {
-      terminarJuego()
-      return // Detener el loop de este frame
+    // 3. Velocidad Dinámica (Wheelie > 15 grados)
+    if (anguloRotacion.value > 15) {
+      velocidadAnimacion.value = Math.max(0.3, velocidadAnimacion.value - 0.01 * (deltaTime / 16))
+    } else {
+      velocidadAnimacion.value = Math.min(0.8, velocidadAnimacion.value + 0.02 * (deltaTime / 16))
     }
 
-    // 4. Aparición de preguntas (ej. cada 5 segundos)
+    // 4. Revisar condición de derrota (85 grados o -20 grados)
+    if (anguloRotacion.value > 100 || anguloRotacion.value < -20) {
+      terminarJuego()
+      return 
+    }
+
+    // 5. Aparición de preguntas
     if (tiempoAcumuladoPregunta >= 5000 && indicePregunta.value < listaPreguntas.value.length) {
       mostrarPregunta()
+      return // Pausar ciclo para la pregunta
     }
   }
 
-  // Siguiente frame
   gameLoopId = requestAnimationFrame(gameLoop)
 }
 
 const mostrarPregunta = () => {
-  juegoPausado.value = true
   mostrandoPregunta.value = true
   tiempoAcumuladoPregunta = 0
-  
-  // Reiniciar estado de teclas para evitar aceleración accidental post-pausa
   isAccelerating = false
   isBraking = false
+  cancelAnimationFrame(gameLoopId) // Detener render temporalmente
 }
 
 const verificarRespuesta = (opcionSeleccionada) => {
   const preguntaActual = listaPreguntas.value[indicePregunta.value]
   
   if (opcionSeleccionada === preguntaActual.respuesta_correcta) {
-    // Acierto
     if (audioAcierto.value) {
       audioAcierto.value.currentTime = 0
       audioAcierto.value.play()
     }
     puntos.value += 100
+    registrarAcierto() // Guardar en historial
   } else {
-    // Error
     if (audioError.value) {
       audioError.value.currentTime = 0
       audioError.value.play()
     }
-    // Desestabilizar la moto (Suma bruscamente 35 grados)
-    anguloRotacion.value += 35
+    anguloRotacion.value += 35 // Desestabilizar
   }
   
-  // Ocultar modal y reanudar
   mostrandoPregunta.value = false
-  juegoPausado.value = false
-  lastTime = performance.now() // Evitar salto de tiempo en deltaTime tras la pausa
+  lastTime = performance.now()
+  gameLoopId = requestAnimationFrame(gameLoop) // Reanudar
   
-  // Pasar a la siguiente pregunta
   if (indicePregunta.value < listaPreguntas.value.length) {
     indicePregunta.value++
   }
 
-  // Revisar derrota inmediatamente por si la desestabilización lo hizo caer
-  if (anguloRotacion.value > 60 || anguloRotacion.value < -20) {
+  if (anguloRotacion.value > 85 || anguloRotacion.value < -20) {
     terminarJuego()
   }
 }
@@ -153,13 +181,11 @@ const terminarJuego = () => {
   emit('cambiar-pantalla', 'result')
 }
 
-// Ciclos de vida
 onMounted(() => {
   cargarPreguntas()
   window.addEventListener('keydown', manejarTeclaDown)
   window.addEventListener('keyup', manejarTeclaUp)
   
-  // Iniciar el Game Loop
   lastTime = performance.now()
   gameLoopId = requestAnimationFrame(gameLoop)
 })
@@ -172,8 +198,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="screen endless-runner" :class="{ pausado: juegoPausado }">
-    <!-- UI Superior (Puntos y Distancia) -->
+  <div class="screen endless-runner" :class="{ pausado: juegoPausado || mostrandoPregunta }">
+    <!-- UI Superior -->
     <div class="stats">
       <div class="stat-box">Distancia: {{ Math.floor(distancia) }}m</div>
       <div class="stat-box">Puntos: {{ puntos }}</div>
@@ -181,10 +207,20 @@ onUnmounted(() => {
     
     <!-- Área de juego -->
     <div class="game-area">
-      <!-- Fondo y carretera animada -->
-      <div class="sky"></div>
+      <!-- Entorno Animado -->
+      <div class="sky">
+        <div class="cloud" :style="{ animationDuration: `${velocidadAnimacion * 15}s` }">☁️</div>
+        <div class="cloud cloud-2" :style="{ animationDuration: `${velocidadAnimacion * 20}s` }">☁️</div>
+      </div>
+
+      <div class="scenery-container">
+        <div class="scenery" :style="{ animationDuration: `${velocidadAnimacion * 3}s` }">
+          🌲 🏢 🌲 🌲 🏢 🌲 🏢 🏢 🌲 🌲 🌲 🏢 🌲 🌲
+        </div>
+      </div>
+
       <div class="road-container">
-        <div class="road"></div>
+        <div class="road" :style="{ animationDuration: `${velocidadAnimacion}s` }"></div>
       </div>
       
       <!-- Moto -->
@@ -192,6 +228,38 @@ onUnmounted(() => {
         <div class="moto-container" :style="{ transform: `rotate(${anguloRotacion}deg)` }">
           <img src="/moto.png" alt="Moto" class="moto-img" />
         </div>
+      </div>
+    </div>
+
+    <!-- Controles Móviles (Ocultos en Escritorio) -->
+    <div class="mobile-controls">
+      <button 
+        class="ctrl-btn" 
+        @touchstart.prevent="startBrake" 
+        @touchend.prevent="stopBrake"
+        @mousedown="startBrake"
+        @mouseup="stopBrake"
+        @mouseleave="stopBrake"
+      >
+        ⬅️
+      </button>
+      <button 
+        class="ctrl-btn" 
+        @touchstart.prevent="startAccelerate" 
+        @touchend.prevent="stopAccelerate"
+        @mousedown="startAccelerate"
+        @mouseup="stopAccelerate"
+        @mouseleave="stopAccelerate"
+      >
+        ➡️
+      </button>
+    </div>
+
+    <!-- Menú de Pausa -->
+    <div v-if="juegoPausado && !mostrandoPregunta" class="modal-overlay">
+      <div class="pausa-container">
+        <h1>PAUSA</h1>
+        <p>Presiona ESC para continuar</p>
       </div>
     </div>
 
@@ -212,7 +280,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Audios ocultos -->
+    <!-- Audios -->
     <audio ref="audioAcierto" src="/acierto.mp3"></audio>
     <audio ref="audioError" src="/error.mp3"></audio>
     <audio ref="audioGameOver" src="/game_over.mp3"></audio>
@@ -220,22 +288,16 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Contenedor principal de la pantalla */
 .screen.endless-runner {
   position: relative;
-  width: 100%;
-  max-width: 800px;
-  height: 500px;
+  width: 100vw;
+  height: 100vh;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 0;
 }
 
-/* Estadísticas Superiores */
 .stats {
   position: absolute;
   top: 20px;
@@ -253,10 +315,8 @@ onUnmounted(() => {
   border-radius: 8px;
   font-weight: bold;
   font-size: 1.2rem;
-  letter-spacing: 1px;
 }
 
-/* Escenario del Juego */
 .game-area {
   flex: 1;
   position: relative;
@@ -267,6 +327,38 @@ onUnmounted(() => {
 .sky {
   flex: 1;
   background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+  position: relative;
+  overflow: hidden;
+}
+
+.cloud {
+  position: absolute;
+  top: 20%;
+  right: -100px;
+  font-size: 4rem;
+  animation: moveLeft linear infinite;
+}
+
+.cloud-2 {
+  top: 10%;
+  font-size: 3rem;
+  animation-delay: -5s;
+}
+
+.scenery-container {
+  height: 60px;
+  background: #a8e6cf;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.scenery {
+  font-size: 2.5rem;
+  white-space: nowrap;
+  animation: moveLeft linear infinite;
+  padding-bottom: 5px;
 }
 
 .road-container {
@@ -283,7 +375,6 @@ onUnmounted(() => {
   left: 0;
   width: 200%;
   height: 100%;
-  /* Líneas de la carretera */
   background-image: repeating-linear-gradient(
     90deg,
     transparent 0,
@@ -294,12 +385,19 @@ onUnmounted(() => {
   background-size: 100px 10px;
   background-position: center 50%;
   background-repeat: repeat-x;
-  animation: moveRoad 0.8s linear infinite;
+  animation: moveRoad linear infinite;
 }
 
-/* Pausar animaciones cuando el juego está pausado */
-.screen.pausado .road {
-  animation-play-state: paused;
+/* Pausar todas las animaciones cuando pausado */
+.screen.pausado .road,
+.screen.pausado .scenery,
+.screen.pausado .cloud {
+  animation-play-state: paused !important;
+}
+
+@keyframes moveLeft {
+  from { transform: translateX(100vw); }
+  to { transform: translateX(-200vw); }
 }
 
 @keyframes moveRoad {
@@ -307,11 +405,11 @@ onUnmounted(() => {
   to { transform: translateX(-100px); }
 }
 
-/* Vehículo */
 .moto-wrapper {
   position: absolute;
-  bottom: 60px; /* Posicionado justo sobre la carretera */
+  bottom: 60px;
   left: 20%;
+  z-index: 5;
 }
 
 .moto-container {
@@ -320,19 +418,48 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transform-origin: bottom center; /* Rota desde la rueda trasera/centro inferior */
-  /* NO poner transition: transform aquí para que requestAnimationFrame fluya sin jitter */
+  transform-origin: bottom center;
 }
 
 .moto-img {
   width: 100%;
   height: auto;
-  /* Efecto placeholder por si no hay imagen aún */
   min-height: 80px; 
-  background-color: transparent;
 }
 
-/* Modal de Pregunta */
+/* Controles Móviles */
+.mobile-controls {
+  display: none;
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.ctrl-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 3px solid rgba(255,255,255,0.7);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  font-size: 2rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.ctrl-btn:active {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Modales */
 .modal-overlay {
   position: absolute;
   top: 0;
@@ -345,6 +472,18 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 20;
+}
+
+.pausa-container {
+  color: white;
+  text-align: center;
+  animation: popIn 0.3s ease-out;
+}
+.pausa-container h1 {
+  font-size: 5rem;
+  margin: 0;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  letter-spacing: 5px;
 }
 
 .pregunta-container {
@@ -385,23 +524,22 @@ onUnmounted(() => {
   border-radius: 8px;
   transition: all 0.2s ease;
   color: #333;
-  font-weight: 500;
 }
-
 .btn-opcion:hover {
   background-color: #e2e6ea;
-  border-color: #dae0e5;
-  transform: translateY(-2px);
 }
 
-/* Responsividad */
-@media (max-width: 600px) {
-  .screen.endless-runner { height: 100vh; max-height: none; border-radius: 0; }
-  .moto-wrapper { bottom: 80px; left: 10%; }
-  .moto-container { width: 100px; }
-  .stat-box { font-size: 1rem; padding: 8px 15px; }
-  .pregunta-container { padding: 1.5rem; }
-  .pregunta-container h2 { font-size: 1.2rem; }
-  .btn-opcion { padding: 12px; font-size: 1rem; }
+/* Responsividad (Controles Móviles) */
+@media (max-width: 768px) {
+  .mobile-controls {
+    display: flex;
+  }
+  .moto-wrapper {
+    bottom: 150px; /* Elevar para que los botones no la tapen */
+  }
+  .stat-box {
+    font-size: 1rem;
+    padding: 8px 12px;
+  }
 }
 </style>

@@ -17,15 +17,13 @@ const pantallaActual = ref('start')
 
 <style scoped>
 .app-container {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  text-align: center;
-  padding: 1rem;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f0f2f5;
   color: #333;
-  box-sizing: border-box;
+  overflow: hidden;
 }
 </style>
